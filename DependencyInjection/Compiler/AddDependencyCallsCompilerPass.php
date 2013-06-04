@@ -309,7 +309,7 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
     {
         // @todo wire routeOverwriteExtension, add method calls to groupListHandler.
 
-        $extension = $container->getDefinition('sonata.admin.route.group_list.extension');
+        $extension = $container->getDefinition('sonata.admin.route.group_admin.list_extension');
 
         $groupMap = array();
         foreach ($groups as $group) {
@@ -323,20 +323,22 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
             }
 
             $groupListAdmin = $container->getDefinition($group['group_list']);
-            $extension = $container->getDefinition('sonata.admin.route.group_list.extension');
-
 
             $subs = array();
             foreach ($group['items'] as $adminId) {
                 $admin = $container->getDefinition($adminId);
                 $class = $container->getParameterBag()->resolveValue($admin->getArgument(1));
 
-                $subs[$class] = $admin;
-                $groupMap[$class] = $admin;
+                $subs[$class] = $adminId;
+                $groupMap[$class] = $groupListAdmin;
                 $admin->addMethodCall('addExtension', array($extension));
 
                 // remove the admins in the group from the dashboard
                 $tag = $admin->getTag('sonata.admin');
+                echo "<pre>";
+                var_dump($tag);
+                echo "</pre>";
+                die;
                 $admin->clearTag('sonata.admin');
                 $tag[0]['show_in_dashboard'] = false;
                 $admin->addTag('sonata.admin', $tag[0]);
