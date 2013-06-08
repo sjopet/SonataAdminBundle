@@ -17,6 +17,6 @@
             <argument type="service" id="router" />
         </service>
 
-        <service id="sonata.admin.route.group_admin.list_extension" class="Sonata\AdminBundle\Admin\GroupAdminListExtension" />
+        <service id="sonata.admin.route.group_list_manager.extension" class="Sonata\AdminBundle\Admin\GroupListManagerExtension" />
     </services>
 </container>

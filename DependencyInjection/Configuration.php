@@ -78,7 +78,7 @@ class Configuration implements ConfigurationInterface
                                 ->children()
                                     ->scalarNode('label')->end()
                                     ->scalarNode('label_catalogue')->end()
-                                    ->scalarNode('group_list')->end()
+                                    ->scalarNode('group_list_manager')->end()
                                     ->arrayNode('items')
                                         ->prototype('scalar')->end()
                                     ->end()

@@ -71,9 +71,8 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
                     );
                 }
 
-                $groupListHandler = isset($attributes['group_list']) ? $attributes['group_list'] : null;
-                if(!empty($groupListHandler)){
-                    $groupDefaults[$groupName]['group_list'] = $groupListHandler;
+                if(isset($attributes['group_list_manager'])){
+                    $groupDefaults[$groupName]['group_list_manager'] = $attributes['group_list_manager'];
                 }
 
                 $groupDefaults[$groupName]['items'][] = $id;
@@ -108,8 +107,8 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
                     $group['items'] = array_merge($groupDefaults[$groupName]['items'], $group['item_adds']);
                 }
 
-                if (empty($group['group_list']) && isset($groupDefaults[$groupName]['group_list'])) {
-                    $group['group_list'] = $groupDefaults[$groupName]['group_list'];
+                if (empty($group['group_list_manager']) && isset($groupDefaults[$groupName]['group_list_manager'])) {
+                    $group['group_list_manager'] = $groupDefaults[$groupName]['group_list_manager'];
                 }
             }
         } else {
@@ -307,45 +306,36 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
      */
     protected function fixGroupListAdmins(array $groups, ContainerBuilder $container)
     {
-        // @todo wire routeOverwriteExtension, add method calls to groupListHandler.
-
-        $extension = $container->getDefinition('sonata.admin.route.group_admin.list_extension');
+        $extension = $container->getDefinition('sonata.admin.route.group_list_manager.extension');
 
         $groupMap = array();
         foreach ($groups as $group) {
 
-            if(!isset($group['group_list'])){
+            if(!isset($group['group_list_manager'])){
                 continue;
             }
 
-            if(!$container->hasDefinition($group['group_list'])){
-                continue;
+            if(!$container->hasDefinition($group['group_list_manager'])){
+                continue; // throw exception.
             }
 
-            $groupListAdmin = $container->getDefinition($group['group_list']);
+            $groupListManager = $container->getDefinition($group['group_list_manager']);
 
             $subs = array();
-            foreach ($group['items'] as $adminId) {
+            foreach ($group['items'] as $adminId){
+
+                if($adminId === $group['group_list_manager']){
+                    continue;
+                }
+
                 $admin = $container->getDefinition($adminId);
                 $class = $container->getParameterBag()->resolveValue($admin->getArgument(1));
-
                 $subs[$class] = $adminId;
-                $groupMap[$class] = $groupListAdmin;
+                $groupMap[$class] = $groupListManager;
                 $admin->addMethodCall('addExtension', array($extension));
-
-                // remove the admins in the group from the dashboard
-                $tag = $admin->getTag('sonata.admin');
-                echo "<pre>";
-                var_dump($tag);
-                echo "</pre>";
-                die;
-                $admin->clearTag('sonata.admin');
-                $tag[0]['show_in_dashboard'] = false;
-                $admin->addTag('sonata.admin', $tag[0]);
             }
 
-
-            $groupListAdmin->addMethodCall('setSubClasses', array($subs));
+            $groupListManager->addMethodCall('setSubClasses', array($subs));
         }
 
         if(!empty($groupMap)){
