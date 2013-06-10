@@ -109,13 +109,14 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
 
                 if (empty($group['group_list_manager']) && isset($groupDefaults[$groupName]['group_list_manager'])) {
                     $group['group_list_manager'] = $groupDefaults[$groupName]['group_list_manager'];
+                    $group['items'][] = $group['group_list_manager'];
                 }
             }
         } else {
             $groups = $groupDefaults;
         }
 
-        $this->fixGroupListAdmins($groups, $container);
+        $groups = $this->fixGroupListAdmins($groups, $container);
 
         $pool->addMethodCall('setAdminServiceIds', array($admins));
         $pool->addMethodCall('setAdminGroups', array($groups));
@@ -309,7 +310,7 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
         $extension = $container->getDefinition('sonata.admin.route.group_list_manager.extension');
 
         $groupMap = array();
-        foreach ($groups as $group) {
+        foreach ($groups as $key => $group) {
 
             if(!isset($group['group_list_manager'])){
                 continue;
@@ -336,11 +337,19 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
             }
 
             $groupListManager->addMethodCall('setSubClasses', array($subs));
+
+            /*
+             * remove the original admins in the group and replace them with the list manager.
+             * this means only the list manager is shown on the dashboard block.
+             */
+            $groups[$key]['items'] = array($group['group_list_manager']);
         }
 
         if(!empty($groupMap)){
             $extension->addMethodCall('setGroups', array($groupMap));
         }
+
+        return $groups;
     }
 
 
